@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나라 수도 맞추기</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Jua (초등학생이 좋아하는 둥글둥글하고 귀여운 폰트) -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tone.js (효과음 생성을 위한 라이브러리 - 외부 오디오 파일 없이 소리 재생) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti (정답/클리어 축하 꽃가루 효과) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* 커스텀 스타일 및 애니메이션 정의 */
+        body {
+            font-family: 'Jua', 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* 3D 입체 버튼 효과 */
+        .btn-3d {
+            transition: all 0.1s ease;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        /* 둥실둥실 떠다니는 애니메이션 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* 오답 시 흔들리는 애니메이션 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* 정답 시 통통 튀는 애니메이션 */
+        @keyframes pop {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-pop {
+            animation: pop 0.3s ease-out;
+        }
+
+        /* 사진 프레임 스타일 */
+        .photo-frame {
+            background: white;
+            padding: 12px;
+            border-radius: 24px;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.12), inset 0 0 0 4px #f3f4f6;
+            position: relative;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <!-- 메인 게임 컨테이너 -->
+    <div id="game-container" class="w-full max-w-2xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 sm:p-8 border-4 border-white relative overflow-hidden">
+        
+        <!-- 배경 장식 구름/별 SVG -->
+        <div class="absolute -top-6 -left-6 text-yellow-300 opacity-50 pointer-events-none">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <div class="absolute -bottom-6 -right-6 text-blue-300 opacity-50 pointer-events-none">
+            <svg width="90" height="90" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+
+        <!-- 1. 시작 화면 (Start Screen) -->
+        <div id="start-screen" class="text-center space-y-6 py-4">
+            <div class="inline-block bg-yellow-100 text-yellow-700 px-4 py-1.5 rounded-full text-lg font-bold shadow-sm">
+                🌍 신나는 세계 여행 퀴즈!
+            </div>
+            
+            <div class="animate-float my-2">
+                <span class="text-7xl sm:text-8xl inline-block drop-shadow-md">🗺️</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl font-bold text-indigo-600 tracking-wide drop-shadow-sm">
+                나라 수도 맞추기
+            </h1>
+            
+            <p class="text-gray-600 text-lg sm:text-xl leading-relaxed">
+                세계 여러 나라의 멋진 사진과 국기를 보고<br>
+                <span class="text-pink-500 font-bold">알맞은 수도</span>를 맞혀보세요!
+            </p>
+
+            <!-- 총 라운드 선택 영역 -->
+            <div class="bg-indigo-50 rounded-2xl p-5 border-2 border-indigo-100 space-y-4">
+                <h2 class="text-xl sm:text-2xl text-indigo-800 font-bold">
+                    🎯 도전할 문제 수를 골라주세요!
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <button onclick="startGame(10)" class="btn-3d bg-emerald-400 hover:bg-emerald-500 text-white rounded-2xl py-4 px-3 text-2xl font-bold flex flex-col items-center justify-center gap-1">
+                        <span>🌱 10문제</span>
+                        <span class="text-sm font-normal bg-emerald-600/40 px-2 py-0.5 rounded-full">가볍게 도전!</span>
+                    </button>
+                    <button onclick="startGame(20)" class="btn-3d bg-amber-400 hover:bg-amber-500 text-white rounded-2xl py-4 px-3 text-2xl font-bold flex flex-col items-center justify-center gap-1">
+                        <span>🔥 20문제</span>
+                        <span class="text-sm font-normal bg-amber-600/40 px-2 py-0.5 rounded-full">실력 뽐내기!</span>
+                    </button>
+                    <button onclick="startGame(50)" class="btn-3d bg-rose-500 hover:bg-rose-600 text-white rounded-2xl py-4 px-3 text-2xl font-bold flex flex-col items-center justify-center gap-1">
+                        <span>👑 50문제</span>
+                        <span class="text-sm font-normal bg-rose-700/40 px-2 py-0.5 rounded-full">세계 박사 도전!</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 소리 켜기/끄기 토글 -->
+            <div class="flex justify-center pt-2">
+                <button id="sound-toggle" onclick="toggleSound()" class="text-gray-500 hover:text-indigo-600 flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-base transition">
+                    <span id="sound-icon">🔊</span>
+                    <span id="sound-text">효과음 켜짐</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 게임 플레이 화면 (Quiz Screen) -->
+        <div id="quiz-screen" class="hidden space-y-5">
+            <!-- 상단 상태 바: 진행도 & 점수 -->
+            <div class="flex items-center justify-between bg-indigo-50 px-4 py-3 rounded-2xl border-2 border-indigo-100">
+                <div class="flex items-center gap-2">
+                    <span class="bg-indigo-600 text-white px-3 py-1 rounded-xl text-lg">
+                        문제 <span id="current-q-num">1</span> / <span id="total-q-num">10</span>
+                    </span>
+                    <span id="continent-badge" class="hidden sm:inline-block bg-white text-indigo-600 px-3 py-1 rounded-xl text-base border border-indigo-200">
+                        아시아
+                    </span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="text-lg sm:text-xl text-amber-600 font-bold flex items-center gap-1">
+                        <span>⭐ 점수:</span>
+                        <span id="score-display">0</span>
+                    </div>
+                    <button onclick="confirmQuit()" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-xl transition">
+                        그만하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 진행률 프로그레스 바 -->
+            <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-3.5 rounded-full transition-all duration-300" style="width: 10%"></div>
+            </div>
+
+            <!-- 가운데: 세계 여러 나라 사진 영역 -->
+            <div class="flex flex-col items-center">
+                <div class="photo-frame w-full max-w-md overflow-hidden">
+                    <!-- 이미지 컨테이너 (실제 사진 로드 실패 시 아름다운 SVG 풍경 그래픽으로 자동 대체) -->
+                    <div class="relative w-full h-48 sm:h-56 rounded-xl overflow-hidden bg-sky-100 flex items-center justify-center">
+                        <img id="country-image" src="" alt="나라 대표 사진" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105">
+                        <!-- 사진 위 국기 및 랜드마크 이름 배지 -->
+                        <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-md flex items-center gap-1.5 text-lg">
+                            <span id="country-flag" class="text-2xl">🇰🇷</span>
+                            <span id="country-name-badge" class="font-bold text-gray-800">대한민국</span>
+                        </div>
+                        <div class="absolute bottom-2 right-2 bg-black/60 text-white text-xs sm:text-sm px-2.5 py-1 rounded-lg">
+                            📍 <span id="landmark-name">서울 경복궁</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사진 밑 지시문: "(예) 대한민국의 수도를 맞혀라!" -->
+                <div class="mt-4 text-center bg-yellow-100/80 border-2 border-yellow-300 px-6 py-3 rounded-2xl w-full shadow-sm">
+                    <h2 id="question-text" class="text-2xl sm:text-3xl font-bold text-gray-800">
+                        <span class="text-indigo-600">대한민국</span>의 수도를 맞혀라!
+                    </h2>
+                    <p id="hint-text" class="text-sm sm:text-base text-gray-600 mt-1">
+                        💡 힌트: 한강이 흐르는 멋진 도시예요!
+                    </p>
+                </div>
+            </div>
+
+            <!-- 4지선다 보기 버튼 영역 -->
+            <div id="options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-1">
+                <!-- 자바스크립트로 버튼 4개 동적 생성 -->
+            </div>
+
+            <!-- 정답/오답 피드백 메시지 박스 (alert 대신 사용) -->
+            <div id="feedback-banner" class="hidden rounded-2xl p-4 text-center text-xl font-bold transition-all">
+                <!-- 피드백 내용 -->
+            </div>
+        </div>
+
+        <!-- 3. 결과 화면 (Result Screen) -->
+        <div id="result-screen" class="hidden text-center space-y-6 py-4">
+            <div class="inline-block bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-lg font-bold">
+                🎉 모든 라운드 완료!
+            </div>
+
+            <!-- 트로피 및 등급 -->
+            <div class="space-y-2">
+                <div id="result-emoji" class="text-7xl sm:text-8xl animate-float inline-block">🏆</div>
+                <h2 id="result-title" class="text-3xl sm:text-4xl font-bold text-indigo-600">
+                    전설의 세계 지리 박사!
+                </h2>
+            </div>
+
+            <!-- 상위 몇 퍼센트인지 보여주는 핵심 카드 -->
+            <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-1 rounded-3xl shadow-xl">
+                <div class="bg-white rounded-[22px] p-6 space-y-3">
+                    <p class="text-gray-500 text-lg">전체 도전자 중 나의 순위는?</p>
+                    <div class="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600">
+                        상위 <span id="percentile-value">1</span>%
+                    </div>
+                    <p id="percentile-desc" class="text-gray-700 text-base sm:text-lg">
+                        와우! 거의 모든 나라의 수도를 완벽하게 알고 있네요!
+                    </p>
+                </div>
+            </div>
+
+            <!-- 상세 성적표 -->
+            <div class="grid grid-cols-3 gap-3 bg-gray-50 p-4 rounded-2xl border-2 border-gray-100">
+                <div>
+                    <div class="text-gray-500 text-sm sm:text-base">총 문제</div>
+                    <div id="res-total" class="text-2xl font-bold text-gray-800">10문제</div>
+                </div>
+                <div class="border-x border-gray-200">
+                    <div class="text-gray-500 text-sm sm:text-base">맞힌 개수</div>
+                    <div id="res-correct" class="text-2xl font-bold text-emerald-600">10개</div>
+                </div>
+                <div>
+                    <div class="text-gray-500 text-sm sm:text-base">정답률</div>
+                    <div id="res-accuracy" class="text-2xl font-bold text-indigo-600">100%</div>
+                </div>
+            </div>
+
+            <!-- 다시하기 / 다른 라운드 선택 버튼 -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                <button onclick="restartSameRound()" class="btn-3d bg-indigo-500 hover:bg-indigo-600 text-white text-xl font-bold py-3.5 px-6 rounded-2xl flex-1">
+                    🔄 같은 문제 수 다시하기
+                </button>
+                <button onclick="goHome()" class="btn-3d bg-amber-400 hover:bg-amber-500 text-white text-xl font-bold py-3.5 px-6 rounded-2xl flex-1">
+                    🏠 처음 화면으로
+                </button>
+            </div>
+        </div>
+
+        <!-- 그만하기 확인 모달 (confirm() 대신 커스텀 UI 사용) -->
+        <div id="quit-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-5 shadow-2xl border-4 border-indigo-100 animate-pop">
+                <div class="text-5xl">🤔</div>
+                <h3 class="text-2xl font-bold text-gray-800">정말 그만할까요?</h3>
+                <p class="text-gray-600 text-lg">지금 나가면 풀고 있던 점수가 사라져요!</p>
+                <div class="flex gap-3">
+                    <button onclick="closeQuitModal()" class="btn-3d flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-xl text-lg font-bold">
+                        계속 풀기
+                    </button>
+                    <button onclick="goHome()" class="btn-3d flex-1 bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl text-lg font-bold">
+                        나가기
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * 세계 50개국 데이터베이스
+         * - 각 나라의 이름, 수도, 국기 이모지, 대륙, 랜드마크, 초등학생 눈높이 힌트, 오답 보기, 고화질 Unsplash 사진 URL 포함
+         * - 사진 로딩이 안 될 경우를 대비해 예쁜 맞춤형 SVG 일러스트 폴백(Fallback)도 자동 생성됩니다.
+         */
+        const COUNTRIES_DATA = [
+            { country: "대한민국", capital: "서울", flag: "🇰🇷", continent: "아시아", landmark: "경복궁과 남산타워", hint: "한강이 흐르고 멋진 궁궐이 있는 우리나라의 중심 도시예요!", wrongs: ["부산", "인천", "경주"], img: "https://images.unsplash.com/photo-1538485399081-7191377e8241?auto=format&fit=crop&w=800&q=80", color: "#3b82f6" },
+            { country: "일본", capital: "도쿄", flag: "🇯🇵", continent: "아시아", landmark: "도쿄 타워와 후지산", hint: "우리나라 바로 옆에 있는 섬나라의 가장 큰 도시예요.", wrongs: ["오사카", "교토", "삿포로"], img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80", color: "#ef4444" },
+            { country: "중국", capital: "베이징", flag: "🇨🇳", continent: "아시아", landmark: "자금성과 만리장성", hint: "만리장성과 판다로 유명한 나라의 수도예요.", wrongs: ["상하이", "홍콩", "칭다오"], img: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "미국", capital: "워싱턴 D.C.", flag: "🇺🇸", continent: "북아메리카", landmark: "백악관과 링컨 기념관", hint: "뉴욕이나 LA가 아니라 대통령이 사는 백악관이 있는 곳이에요!", wrongs: ["뉴욕", "로스앤젤레스", "시카고"], img: "https://images.unsplash.com/photo-1501466044931-62695aada8e9?auto=format&fit=crop&w=800&q=80", color: "#2563eb" },
+            { country: "영국", capital: "런던", flag: "🇬🇧", continent: "유럽", landmark: "빅벤과 타워 브리지", hint: "빨간 2층 버스와 시계탑 '빅벤'이 유명한 도시예요.", wrongs: ["맨체스터", "리버풀", "옥스퍼드"], img: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=800&q=80", color: "#1d4ed8" },
+            { country: "프랑스", capital: "파리", flag: "🇫🇷", continent: "유럽", landmark: "에펠탑과 루브르 박물관", hint: "높고 멋진 철탑 '에펠탑'이 서 있는 예술의 도시예요.", wrongs: ["마르세유", "리옹", "니스"], img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80", color: "#4f46e5" },
+            { country: "이탈리아", capital: "로마", flag: "🇮🇹", continent: "유럽", landmark: "콜로세움", hint: "피자와 파스타의 나라! 고대 원형 경기장 콜로세움이 있어요.", wrongs: ["밀라노", "베네치아", "피렌체"], img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=800&q=80", color: "#16a34a" },
+            { country: "독일", capital: "베를린", flag: "🇩🇪", continent: "유럽", landmark: "브란덴부르크 문", hint: "소시지와 자동차가 유명하며, 옛날에 장벽이 있었던 도시예요.", wrongs: ["뮌헨", "프랑크푸르트", "함부르크"], img: "https://images.unsplash.com/photo-1560969184-10fe8719e047?auto=format&fit=crop&w=800&q=80", color: "#ca8a04" },
+            { country: "호주", capital: "캔버라", flag: "🇦🇺", continent: "오세아니아", landmark: "국회의사당", hint: "시드니가 아니라 시드니와 멜버른 사이에 계획해서 만든 수도예요!", wrongs: ["시드니", "멜버른", "브리즈번"], img: "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=800&q=80", color: "#0284c7" },
+            { country: "캐나다", capital: "오타와", flag: "🇨🇦", continent: "북아메리카", landmark: "팔리아멘트 힐", hint: "단풍잎 국기의 나라! 토론토나 밴쿠버가 아니라 이곳이 수도예요.", wrongs: ["토론토", "밴쿠버", "몬트리올"], img: "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?auto=format&fit=crop&w=800&q=80", color: "#e11d48" },
+            { country: "스페인", capital: "마드리드", flag: "🇪🇸", continent: "유럽", landmark: "마드리드 왕궁", hint: "정열의 나라! 바르셀로나와 함께 축구가 아주 유명한 도시예요.", wrongs: ["바르셀로나", "세비야", "발렌시아"], img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=800&q=80", color: "#ea580c" },
+            { country: "브라질", capital: "브라질리아", flag: "🇧🇷", continent: "남아메리카", landmark: "브라질리아 대성당", hint: "삼바 축제와 축구의 나라! 비행기 모양으로 계획된 수도예요.", wrongs: ["리우데자네이루", "상파울루", "살바도르"], img: "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=800&q=80", color: "#15803d" },
+            { country: "이집트", capital: "카이로", flag: "🇪🇬", continent: "아프리카", landmark: "피라미드와 스핑크스", hint: "나일강 옆에 있으며 거대한 피라미드와 스핑크스가 가까워요.", wrongs: ["알렉산드리아", "룩소르", "기자"], img: "https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=800&q=80", color: "#d97706" },
+            { country: "태국", capital: "방콕", flag: "🇹🇭", continent: "아시아", landmark: "새벽 사원(왓 아룬)", hint: "코끼리와 맛있는 팟타이가 유명한 동남아시아 여행지예요.", wrongs: ["푸껫", "치앙마이", "파타야"], img: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=800&q=80", color: "#7c3aed" },
+            { country: "베트남", capital: "하노이", flag: "🇻🇳", continent: "아시아", landmark: "호안끼엠 호수", hint: "쌀국수와 반미가 맛있는 나라의 북쪽에 있는 수도예요.", wrongs: ["호찌민", "다낭", "나트랑"], img: "https://images.unsplash.com/photo-1555921015-5532091f6026?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "인도", capital: "뉴델리", flag: "🇮🇳", continent: "아시아", landmark: "인디아 게이트", hint: "카레와 타지마할로 유명한 아주 큰 나라의 수도예요.", wrongs: ["뭄바이", "콜카타", "벵갈루루"], img: "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=800&q=80", color: "#f97316" },
+            { country: "러시아", capital: "모스크바", flag: "🇷🇺", continent: "유럽/아시아", landmark: "성 바실리 대성당", hint: "세계에서 땅이 가장 넓은 나라! 알록달록 양파 모양 지붕 성당이 있어요.", wrongs: ["상트페테르부르크", "블라디보스토크", "소치"], img: "https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=800&q=80", color: "#2563eb" },
+            { country: "스위스", capital: "베른", flag: "🇨🇭", continent: "유럽", landmark: "치트글로게 시계탑", hint: "알프스 산맥과 시계, 초콜릿으로 유명한 나라! 곰의 도시라는 뜻이에요.", wrongs: ["취리히", "제네바", "루체른"], img: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80", color: "#ef4444" },
+            { country: "네덜란드", capital: "암스테르담", flag: "🇳🇱", continent: "유럽", landmark: "운하와 풍차", hint: "튤립과 풍차, 자전거가 가득한 물의 도시예요.", wrongs: ["로테르담", "헤이그", "위트레흐트"], img: "https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?auto=format&fit=crop&w=800&q=80", color: "#f97316" },
+            { country: "그리스", capital: "아테네", flag: "🇬🇷", continent: "유럽", landmark: "파르테논 신전", hint: "그리스 로마 신화와 올림픽이 시작된 역사가 깊은 도시예요.", wrongs: ["산토리니", "테살로니키", "스파르타"], img: "https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=800&q=80", color: "#0284c7" },
+            { country: "튀르키예", capital: "앙카라", flag: "🇹🇷", continent: "아시아/유럽", landmark: "아타튀르크 영묘", hint: "형제의 나라! 이스탄불이 가장 크지만 수도는 나라 한가운데 있어요.", wrongs: ["이스탄불", "안탈리아", "이즈미르"], img: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "멕시코", capital: "멕시코시티", flag: "🇲🇽", continent: "북아메리카", landmark: "소칼로 광장", hint: "타코와 나초가 유명한 나라! 나라 이름 뒤에 '시티'가 붙어요.", wrongs: ["칸쿤", "과달라하라", "몬테레이"], img: "https://images.unsplash.com/photo-1518659526054-190340b32735?auto=format&fit=crop&w=800&q=80", color: "#16a34a" },
+            { country: "아르헨티나", capital: "부에노스아이레스", flag: "🇦🇷", continent: "남아메리카", landmark: "오벨리스크 광장", hint: "축구 선수 메시의 나라! '좋은 바람'이라는 뜻의 멋진 이름이에요.", wrongs: ["코르도바", "로사리오", "멘도사"], img: "https://images.unsplash.com/photo-1589909202802-8f4aadce1849?auto=format&fit=crop&w=800&q=80", color: "#38bdf8" },
+            { country: "페루", capital: "리마", flag: "🇵🇪", continent: "남아메리카", landmark: "리마 아르마스 광장", hint: "하늘 위의 도시 마추픽추와 귀여운 알파카가 사는 나라의 수도예요.", wrongs: ["쿠스코", "아레키파", "트루히요"], img: "https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=800&q=80", color: "#ef4444" },
+            { country: "뉴질랜드", capital: "웰링턴", flag: "🇳🇿", continent: "오세아니아", landmark: "웰링턴 항구", hint: "양떼와 키위새의 나라! 오클랜드보다 남쪽에 있는 바람의 도시예요.", wrongs: ["오클랜드", "크라이스트처치", "퀸스타운"], img: "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?auto=format&fit=crop&w=800&q=80", color: "#0f172a" },
+            { country: "인도네시아", capital: "자카르타", flag: "🇮🇩", continent: "아시아", landmark: "독립 기념탑", hint: "수만 개의 섬으로 이루어진 나라의 가장 큰 도시예요.", wrongs: ["발리", "수라바야", "반둥"], img: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "필리핀", capital: "마닐라", flag: "🇵🇭", continent: "아시아", landmark: "인트라무로스", hint: "아름다운 바다가 많은 섬나라! 세부나 보라카이보다 큰 수도예요.", wrongs: ["세부", "다바오", "보라카이"], img: "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=800&q=80", color: "#2563eb" },
+            { country: "말레이시아", capital: "쿠알라룸푸르", flag: "🇲🇾", continent: "아시아", landmark: "페트로나스 트윈 타워", hint: "하늘을 찌를 듯 높은 쌍둥이 빌딩이 있는 동남아시아 도시예요.", wrongs: ["코타키나발루", "페낭", "조호르바루"], img: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80", color: "#eab308" },
+            { country: "싱가포르", capital: "싱가포르", flag: "🇸🇬", continent: "아시아", landmark: "머라이언 파크", hint: "나라 이름과 수도 이름이 똑같은 아주 깨끗하고 멋진 도시국가예요!", wrongs: ["쿠알라룸푸르", "방콕", "마닐라"], img: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=800&q=80", color: "#ef4444" },
+            { country: "몽골", capital: "울란바토르", flag: "🇲🇳", continent: "아시아", landmark: "수흐바타르 광장", hint: "푸른 초원과 게르, 말 타기로 유명한 나라의 수도예요.", wrongs: ["다르항", "에르데네트", "카라코룸"], img: "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=800&q=80", color: "#0284c7" },
+            { country: "사우디아라비아", capital: "리야드", flag: "🇸🇦", continent: "아시아", landmark: "킹덤 센터", hint: "넓은 사막과 석유가 풍부한 중동 나라의 한가운데 있는 수도예요.", wrongs: ["메카", "제다", "두바이"], img: "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?auto=format&fit=crop&w=800&q=80", color: "#15803d" },
+            { country: "아랍에미리트", capital: "아부다비", flag: "🇦🇪", continent: "아시아", landmark: "셰이크 자이드 그랜드 모스크", hint: "세계에서 가장 높은 빌딩이 있는 두바이 바로 옆, 진짜 수도예요!", wrongs: ["두바이", "샤르자", "도하"], img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80", color: "#059669" },
+            { country: "스웨덴", capital: "스톡홀름", flag: "🇸🇪", continent: "유럽", landmark: "감라스탄 구시가지", hint: "노벨상 시상식이 열리고 이케아 가구가 태어난 북유럽의 수도예요.", wrongs: ["예테보리", "말뫼", "웁살라"], img: "https://images.unsplash.com/photo-1509356843151-3e7d96241e11?auto=format&fit=crop&w=800&q=80", color: "#2563eb" },
+            { country: "노르웨이", capital: "오슬로", flag: "🇳🇴", continent: "유럽", landmark: "오슬로 오페라 하우스", hint: "멋진 피오르 해안과 오로라, 노벨 평화상 시상식으로 유명한 도시예요.", wrongs: ["베르겐", "트론헤임", "스타방에르"], img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "핀란드", capital: "헬싱키", flag: "🇫🇮", continent: "유럽", landmark: "헬싱키 대성당", hint: "산타클로스 마을과 사우나, 자일리톨이 유명한 북유럽의 수도예요.", wrongs: ["로바니에미", "탐페레", "투르쿠"], img: "https://images.unsplash.com/photo-1538332576228-eb5b4c4de6f5?auto=format&fit=crop&w=800&q=80", color: "#0284c7" },
+            { country: "덴마크", capital: "코펜하겐", flag: "🇩🇰", continent: "유럽", landmark: "뉘하운 항구와 인어공주상", hint: "동화 작가 안데르센과 레고 블록의 나라! 인어공주 동상이 있어요.", wrongs: ["오르후스", "오덴세", "올보르"], img: "https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=800&q=80", color: "#e11d48" },
+            { country: "오스트리아", capital: "빈", flag: "🇦🇹", continent: "유럽", landmark: "쇤브룬 궁전", hint: "모차르트와 베토벤이 활동한 아름다운 '음악의 도시'예요.", wrongs: ["잘츠부르크", "인스브루크", "그라츠"], img: "https://images.unsplash.com/photo-1516550893923-42d28e5677af?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "체코", capital: "프라하", flag: "🇨🇿", continent: "유럽", landmark: "카를교와 프라하 성", hint: "동화 속 마을처럼 예쁜 빨간 지붕과 시계탑이 있는 도시예요.", wrongs: ["브르노", "오스트라바", "플젠"], img: "https://images.unsplash.com/photo-1541849546-216549ae216d?auto=format&fit=crop&w=800&q=80", color: "#2563eb" },
+            { country: "헝가리", capital: "부다페스트", flag: "🇭🇺", continent: "유럽", landmark: "헝가리 국회의사당", hint: "도나우강을 사이에 두고 '부다'와 '페스트'가 합쳐진 야경이 멋진 도시예요.", wrongs: ["데브레첸", "세게드", "미슈콜츠"], img: "https://images.unsplash.com/photo-1551867633-194f125bddfa?auto=format&fit=crop&w=800&q=80", color: "#16a34a" },
+            { country: "폴란드", capital: "바르샤바", flag: "🇵🇱", continent: "유럽", landmark: "바르샤바 구시가지", hint: "피아노의 시인 쇼팽이 태어난 나라의 수도예요.", wrongs: ["크라쿠프", "그단스크", "브로츠와프"], img: "https://images.unsplash.com/photo-1519197924294-4ba991a11128?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "벨기에", capital: "브뤼셀", flag: "🇧🇪", continent: "유럽", landmark: "그랑플라스와 오줌싸개 동상", hint: "달콤한 와플과 초콜릿, 귀여운 오줌싸개 동상이 있는 도시예요.", wrongs: ["브뤼헤", "안트베르펜", "헨트"], img: "https://images.unsplash.com/photo-1559113202-c916b8e44373?auto=format&fit=crop&w=800&q=80", color: "#ca8a04" },
+            { country: "포르투갈", capital: "리스본", flag: "🇵🇹", continent: "유럽", landmark: "노란 트램과 벨렝탑", hint: "에그타르트와 노란색 전차(트램)가 언덕을 달리는 항구 도시예요.", wrongs: ["포르투", "코임브라", "파루"], img: "https://images.unsplash.com/photo-1555881400-74d7acaacd8b?auto=format&fit=crop&w=800&q=80", color: "#15803d" },
+            { country: "아일랜드", capital: "더블린", flag: "🇮🇪", continent: "유럽", landmark: "하페니 다리", hint: "초록빛 자연과 세잎클로버가 상징인 섬나라의 수도예요.", wrongs: ["코크", "골웨이", "벨파스트"], img: "https://images.unsplash.com/photo-1549918864-48ac978761a4?auto=format&fit=crop&w=800&q=80", color: "#16a34a" },
+            { country: "남아프리카 공화국", capital: "프리토리아", flag: "🇿🇦", continent: "아프리카", landmark: "유니언 빌딩", hint: "아프리카 맨 남쪽 나라! 행정 수도인 이곳에는 보라색 자카란다 꽃이 피어요.", wrongs: ["케이프타운", "요하네스버그", "더반"], img: "https://images.unsplash.com/photo-1580060839134-75a5edca2e99?auto=format&fit=crop&w=800&q=80", color: "#15803d" },
+            { country: "케냐", capital: "나이로비", flag: "🇰🇪", continent: "아프리카", landmark: "나이로비 국립공원", hint: "사자, 기린, 얼룩말이 뛰어노는 사파리 여행으로 유명한 나라의 수도예요.", wrongs: ["몸바사", "키수무", "나쿠루"], img: "https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=800&q=80", color: "#dc2626" },
+            { country: "모로코", capital: "라바트", flag: "🇲🇦", continent: "아프리카", landmark: "하산 탑", hint: "사하라 사막과 알록달록한 전통 시장이 있는 북아프리카 나라의 수도예요.", wrongs: ["카사블랑카", "마라케시", "페스"], img: "https://images.unsplash.com/photo-1539020140153-e479b8c22e70?auto=format&fit=crop&w=800&q=80", color: "#ef4444" },
+            { country: "칠레", capital: "산티아고", flag: "🇨🇱", continent: "남아메리카", landmark: "안데스 산맥과 시내", hint: "지도에서 아래로 아주 길쭉하게 생긴 나라의 한가운데 수도예요.", wrongs: ["발파라이소", "푼타아레나스", "이키케"], img: "https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?auto=format&fit=crop&w=800&q=80", color: "#2563eb" },
+            { country: "콜롬비아", capital: "보고타", flag: "🇨🇴", continent: "남아메리카", landmark: "몬세라테 언덕", hint: "향긋한 커피가 유명한 남아메리카 나라의 높은 산속 수도예요.", wrongs: ["메데인", "카르타헤나", "칼리"], img: "https://images.unsplash.com/photo-1568632234157-ce7aecd03d0d?auto=format&fit=crop&w=800&q=80", color: "#eab308" },
+            { country: "우크라이나", capital: "키이우", flag: "🇺🇦", continent: "유럽", landmark: "성 소피아 대성당", hint: "넓은 해바라기 밭과 황금빛 돔 지붕 성당이 있는 동유럽의 수도예요.", wrongs: ["오데사", "르비우", "하르키우"], img: "https://images.unsplash.com/photo-1561542320-9a18cd340469?auto=format&fit=crop&w=800&q=80", color: "#0284c7" },
+            { country: "카타르", capital: "도하", flag: "🇶🇦", continent: "아시아", landmark: "도하 스카이라인", hint: "2022년 월드컵이 열렸던 중동의 부자 나라 수도예요.", wrongs: ["두바이", "아부다비", "리야드"], img: "https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80", color: "#881337" }
+        ];
+
+        // 게임 상태 관리 변수
+        let currentQuestions = [];
+        let totalRounds = 10;
+        let currentIndex = 0;
+        let score = 0;
+        let isAnswering = false;
+        let soundEnabled = true;
+
+        // Tone.js 신디사이저 초기화 (효과음용)
+        let synth = null;
+        function initAudio() {
+            if (!synth) {
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                synth.volume.value = -8;
+            }
+        }
+
+        // 효과음 재생 함수
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') {
+                    Tone.context.resume();
+                }
+                const now = Tone.now();
+                if (type === 'click') {
+                    synth.triggerAttackRelease("C5", "16n", now);
+                } else if (type === 'correct') {
+                    // 딩동댕~ 밝은 화음
+                    synth.triggerAttackRelease("C5", "16n", now);
+                    synth.triggerAttackRelease("E5", "16n", now + 0.1);
+                    synth.triggerAttackRelease("G5", "8n", now + 0.2);
+                } else if (type === 'wrong') {
+                    // 띠용~ 낮은 음
+                    synth.triggerAttackRelease("E3", "8n", now);
+                    synth.triggerAttackRelease("Eb3", "4n", now + 0.12);
+                } else if (type === 'fanfare') {
+                    // 게임 종료 팡파르
+                    synth.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+                    synth.triggerAttackRelease(["F4", "A4", "C5"], "8n", now + 0.15);
+                    synth.triggerAttackRelease(["G4", "B4", "D5"], "8n", now + 0.3);
+                    synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now + 0.45);
+                }
+            } catch (e) {
+                // 오디오 컨텍스트 제한 시 무시
+            }
+        }
+
+        // 소리 켜기/끄기 전환
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            const text = document.getElementById('sound-text');
+            if (soundEnabled) {
+                icon.textContent = '🔊';
+                text.textContent = '효과음 켜짐';
+                playSound('click');
+            } else {
+                icon.textContent = '🔇';
+                text.textContent = '효과음 꺼짐';
+            }
+        }
+
+        // 배열 무작위 섞기 (Fisher-Yates 알고리즘)
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // 외부 사진 로딩 실패 시 보여줄 예쁜 맞춤형 SVG 일러스트 생성기
+        function createFallbackSVG(item) {
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+                    <defs>
+                        <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="${item.color}" stop-opacity="0.85"/>
+                            <stop offset="100%" stop-color="#fef08a" stop-opacity="0.9"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="800" height="450" fill="url(#sky)"/>
+                    <circle cx="650" cy="90" r="45" fill="#fde047" opacity="0.9"/>
+                    <path d="M0 320 Q 200 220 400 320 T 800 300 L 800 450 L 0 450 Z" fill="#22c55e" opacity="0.8"/>
+                    <path d="M0 360 Q 300 290 600 360 T 800 340 L 800 450 L 0 450 Z" fill="#15803d"/>
+                    <text x="400" y="210" font-size="110" text-anchor="middle" dominant-baseline="middle">${item.flag}</text>
+                    <text x="400" y="305" font-family="sans-serif" font-size="32" font-weight="bold" fill="#ffffff" text-anchor="middle" stroke="#000000" stroke-width="1">${item.landmark}</text>
+                </svg>
+            `;
+            return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+        }
+
+        // 게임 시작 함수 (10, 20, 50문제 선택)
+        function startGame(rounds) {
+            playSound('click');
+            totalRounds = rounds;
+            currentIndex = 0;
+            score = 0;
+            isAnswering = false;
+
+            // 전체 데이터에서 무작위로 rounds 개수만큼 문제 뽑기
+            const shuffled = shuffleArray(COUNTRIES_DATA);
+            currentQuestions = shuffled.slice(0, Math.min(rounds, shuffled.length));
+
+            // 화면 전환
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+
+            document.getElementById('total-q-num').textContent = totalRounds;
+            document.getElementById('score-display').textContent = score;
+
+            renderQuestion();
+        }
+
+        // 현재 문제 화면에 그리기
+        function renderQuestion() {
+            isAnswering = false;
+            const q = currentQuestions[currentIndex];
+
+            // 상단 번호 및 프로그레스 바 업데이트
+            document.getElementById('current-q-num').textContent = currentIndex + 1;
+            document.getElementById('continent-badge').textContent = `🌏 ${q.continent}`;
+            const progressPercent = ((currentIndex) / totalRounds) * 100;
+            document.getElementById('progress-bar').style.width = `${Math.max(5, progressPercent)}%`;
+
+            // 가운데 사진 및 배지 업데이트
+            const imgEl = document.getElementById('country-image');
+            imgEl.onerror = function() {
+                this.onerror = null;
+                this.src = createFallbackSVG(q);
+            };
+            imgEl.src = q.img;
+
+            document.getElementById('country-flag').textContent = q.flag;
+            document.getElementById('country-name-badge').textContent = q.country;
+            document.getElementById('landmark-name').textContent = q.landmark;
+
+            // 사진 밑 지시문: "(예) 대한민국의 수도를 맞혀라!"
+            document.getElementById('question-text').innerHTML = 
+                `<span class="text-indigo-600 underline decoration-wavy decoration-pink-400 underline-offset-4">${q.country}</span>의 수도를 맞혀라!`;
+            document.getElementById('hint-text').textContent = `💡 힌트: ${q.hint}`;
+
+            // 피드백 배너 숨기기
+            const feedbackBanner = document.getElementById('feedback-banner');
+            feedbackBanner.classList.add('hidden');
+
+            // 4개 보기 생성 (정답 1개 + 오답 3개 무작위 섞기)
+            const options = shuffleArray([q.capital, ...q.wrongs]);
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+
+            const btnColors = [
+                'bg-sky-500 hover:bg-sky-600 border-sky-700',
+                'bg-violet-500 hover:bg-violet-600 border-violet-700',
+                'bg-teal-500 hover:bg-teal-600 border-teal-700',
+                'bg-orange-500 hover:bg-orange-600 border-orange-700'
+            ];
+
+            options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `btn-3d ${btnColors[idx]} text-white text-xl sm:text-2xl font-bold py-4 px-5 rounded-2xl flex items-center justify-center gap-2 transition-all`;
+                btn.innerHTML = `<span class="bg-white/25 w-8 h-8 rounded-full flex items-center justify-center text-base">${idx + 1}</span> <span>${opt}</span>`;
+                btn.onclick = () => checkAnswer(opt, btn);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        // 정답 확인 처리
+        function checkAnswer(selectedCapital, clickedBtn) {
+            if (isAnswering) return;
+            isAnswering = true;
+
+            const q = currentQuestions[currentIndex];
+            const isCorrect = selectedCapital === q.capital;
+            const feedbackBanner = document.getElementById('feedback-banner');
+            const allButtons = document.getElementById('options-grid').querySelectorAll('button');
+
+            // 모든 버튼 비활성화 및 정답 표시
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                const btnText = btn.querySelector('span:last-child').textContent;
+                if (btnText === q.capital) {
+                    btn.className = 'btn-3d bg-emerald-500 text-white text-xl sm:text-2xl font-bold py-4 px-5 rounded-2xl flex items-center justify-center gap-2 ring-4 ring-emerald-300 animate-pop';
+                } else if (btn === clickedBtn && !isCorrect) {
+                    btn.className = 'btn-3d bg-rose-500 text-white text-xl sm:text-2xl font-bold py-4 px-5 rounded-2xl flex items-center justify-center gap-2 opacity-90 animate-shake';
+                } else {
+                    btn.classList.add('opacity-40');
+                }
+            });
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('score-display').textContent = score;
+                playSound('correct');
+
+                // 작은 꽃가루 효과
+                confetti({
+                    particleCount: 35,
+                    spread: 55,
+                    origin: { y: 0.7 }
+                });
+
+                feedbackBanner.className = 'rounded-2xl p-4 text-center text-xl font-bold bg-emerald-100 text-emerald-800 border-2 border-emerald-400 animate-pop';
+                feedbackBanner.innerHTML = `⭕ 정답이에요! <b>${q.country}</b>의 수도는 <b>${q.capital}</b>입니다!`;
+            } else {
+                playSound('wrong');
+                feedbackBanner.className = 'rounded-2xl p-4 text-center text-xl font-bold bg-rose-100 text-rose-800 border-2 border-rose-400 animate-shake';
+                feedbackBanner.innerHTML = `❌ 아쉬워요! <b>${q.country}</b>의 수도는 <b>${q.capital}</b>이에요!`;
+            }
+
+            feedbackBanner.classList.remove('hidden');
+
+            // 1.4초 후 다음 문제 또는 결과 화면으로 이동
+            setTimeout(() => {
+                currentIndex++;
+                if (currentIndex < totalRounds) {
+                    renderQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1450);
+        }
+
+        // 라운드 종료 후 결과 및 상위 몇 퍼센트인지 계산하여 표시
+        function showResults() {
+            playSound('fanfare');
+            document.getElementById('progress-bar').style.width = '100%';
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            const accuracy = Math.round((score / totalRounds) * 100);
+            
+            // 정답률과 난이도(문제 수)를 반영하여 현실감 있고 재미있는 상위 퍼센트(%) 산출
+            let percentile = 50;
+            let title = "";
+            let emoji = "";
+            let desc = "";
+
+            if (accuracy === 100) {
+                percentile = totalRounds === 50 ? 0.1 : (totalRounds === 20 ? 0.5 : 1);
+                emoji = "👑";
+                title = "전설의 세계 지리 마스터!";
+                desc = "단 한 문제도 틀리지 않았어요! 세계 어디든 여행할 수 있겠네요!";
+            } else if (accuracy >= 90) {
+                percentile = Math.max(2, Math.round((100 - accuracy) * 0.8));
+                emoji = "🏆";
+                title = "최고의 세계 탐험가!";
+                desc = "정말 대단한 실력이에요! 친구들에게 자랑해도 좋아요!";
+            } else if (accuracy >= 80) {
+                percentile = Math.round(10 + (90 - accuracy) * 1.2);
+                emoji = "🥇";
+                title = "똑똑한 지구본 박사!";
+                desc = "대부분의 나라 수도를 정확하게 알고 있네요! 멋져요!";
+            } else if (accuracy >= 60) {
+                percentile = Math.round(25 + (80 - accuracy) * 1.5);
+                emoji = "🥈";
+                title = "씩씩한 세계 여행자!";
+                desc = "절반 이상을 훌쩍 넘겼어요! 조금만 더 연습하면 금방 박사가 될 거예요!";
+            } else if (accuracy >= 40) {
+                percentile = Math.round(55 + (60 - accuracy) * 1.2);
+                emoji = "🧭";
+                title = "호기심 가득한 새싹 탐험가!";
+                desc = "오늘 새로운 나라의 수도를 많이 배웠죠? 다시 도전해 봐요!";
+            } else {
+                percentile = Math.min(95, Math.round(80 + (40 - accuracy) * 0.4));
+                emoji = "🌱";
+                title = "세계 여행 출발 준비 완료!";
+                desc = "괜찮아요! 힌트를 잘 읽으면서 한 번 더 도전하면 점수가 쑥쑥 오를 거예요!";
+            }
+
+            // 결과 화면에 텍스트 반영
+            document.getElementById('result-emoji').textContent = emoji;
+            document.getElementById('result-title').textContent = title;
+            document.getElementById('percentile-value').textContent = percentile;
+            document.getElementById('percentile-desc').textContent = desc;
+
+            document.getElementById('res-total').textContent = `${totalRounds}문제`;
+            document.getElementById('res-correct').textContent = `${score}개`;
+            document.getElementById('res-accuracy').textContent = `${accuracy}%`;
+
+            // 성적이 좋으면 화려한 축하 꽃가루 터뜨리기
+            if (accuracy >= 70) {
+                confetti({
+                    particleCount: 100,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // 같은 라운드 수로 다시 시작
+        function restartSameRound() {
+            startGame(totalRounds);
+        }
+
+        // 처음 화면으로 돌아가기
+        function goHome() {
+            playSound('click');
+            closeQuitModal();
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        // 그만하기 모달 열기/닫기
+        function confirmQuit() {
+            playSound('click');
+            document.getElementById('quit-modal').classList.remove('hidden');
+        }
+
+        function closeQuitModal() {
+            document.getElementById('quit-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

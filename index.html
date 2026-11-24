@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나라 수도 맞추기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c2340;--sub:#6b7394;--line:#e6e9f5;--card:#fff;--pri:#4f5bd5;--pri2:#7c4dff;--pink:#ff5d8f;--ok:#12b886;--bad:#f0476a;--gold:#ffb81f;--bg1:#dff3ff;--bg2:#ffe9f1}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{font-family:'Noto Sans KR',system-ui,sans-serif;font-weight:700;color:var(--ink);user-select:none;-webkit-user-select:none;
+  background:radial-gradient(900px 600px at 0% 0%,var(--bg1),transparent 60%),radial-gradient(900px 600px at 100% 100%,var(--bg2),transparent 60%),#f6f8ff;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:clamp(10px,2vh,24px)}
+button{font:inherit;color:inherit;border:0;cursor:pointer;background:none}
+.jua{font-family:'Jua','Noto Sans KR',sans-serif;font-weight:400}
+.hidden{display:none!important}
+.shell{width:min(1120px,100%);background:var(--card);border-radius:32px;box-shadow:0 24px 60px rgba(60,70,140,.16);padding:clamp(16px,2.6vh,30px) clamp(16px,2.6vw,34px);position:relative}
+.btn{border-radius:18px;padding:14px 22px;font-weight:900;font-size:18px;background:#eef0fb;box-shadow:0 5px 0 #d5d9ee;transition:transform .07s,box-shadow .07s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #d5d9ee}
+.btn.pri{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;box-shadow:0 5px 0 #3a3fa8}
+.btn.pri:active{box-shadow:0 1px 0 #3a3fa8}
+.btn.gold{background:linear-gradient(135deg,#ffd35c,#ffa41f);color:#4a2c00;box-shadow:0 5px 0 #d98200}
+.btn.sm{padding:9px 15px;font-size:14.5px;border-radius:14px;box-shadow:0 3px 0 #d5d9ee}
+
+/* ---------- 시작 ---------- */
+#start{text-align:center;display:grid;gap:clamp(10px,2vh,18px);justify-items:center}
+.chip{display:inline-block;background:#fff4cf;color:#9a6a00;padding:7px 18px;border-radius:99px;font-size:16px}
+.globe{font-size:clamp(56px,10vh,88px);line-height:1;animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px)}}
+h1{margin:0;font-size:clamp(40px,7vw,68px);color:var(--pri);line-height:1.05}
+.lead{margin:0;color:var(--sub);font-size:clamp(15px,2vw,19px);font-weight:500;line-height:1.6}
+.lead b{color:var(--pink)}
+.name{width:min(420px,100%);padding:14px 16px;border-radius:18px;border:3px solid var(--line);font:inherit;font-size:21px;font-weight:900;text-align:center;outline:none;color:var(--ink)}
+.name:focus{border-color:var(--pri)}
+.name.need{border-color:var(--bad);animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.pick{background:#f3f4ff;border-radius:24px;padding:16px;width:min(760px,100%)}
+.pick h2{margin:0 0 12px;font-size:20px;color:#3a3fa8}
+.rounds{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.round{border-radius:20px;padding:16px 8px;color:#fff;font-size:24px;font-weight:900;box-shadow:0 6px 0 rgba(0,0,0,.2);transition:transform .07s,box-shadow .07s}
+.round:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.round small{display:block;font-size:13.5px;font-weight:700;opacity:.9;margin-top:3px}
+.r10{background:linear-gradient(135deg,#34d399,#10b981)}.r20{background:linear-gradient(135deg,#fbbf24,#f59e0b)}.r50{background:linear-gradient(135deg,#fb7185,#e11d48)}
+.rowc{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@media (max-width:560px){.rounds{grid-template-columns:1fr}}
+
+/* ---------- 퀴즈 ---------- */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f3f4ff;border-radius:18px;padding:9px 12px;flex-wrap:wrap}
+.bar .l,.bar .r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{background:var(--pri);color:#fff;padding:5px 13px;border-radius:12px;font-size:16px}
+.tag.w{background:#fff;color:var(--pri);border:2px solid #dfe2fb}
+.tag.fire{background:#fff0e0;color:#d9480f}
+.stat{font-size:17px;color:#b26a00}.stat.t{color:var(--sub)}
+.prog{height:12px;border-radius:99px;background:#eceefa;overflow:hidden;margin:10px 0 14px}
+.prog i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--pri),var(--pink));transition:width .3s}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(14px,2.4vw,28px);align-items:center}
+@media (max-width:820px){.stage{grid-template-columns:1fr}}
+.photo{position:relative;border-radius:26px;overflow:hidden;aspect-ratio:4/3;background:#dfe9ff;box-shadow:0 14px 30px rgba(60,70,140,.2);border:6px solid #fff;outline:2px solid var(--line)}
+.photo img.pic{width:100%;height:100%;object-fit:cover;display:block}
+.art{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#fff}
+.art .big{width:46%;border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.3);border:4px solid #fff}
+.art .emo{font-size:90px}
+.art span{position:absolute;bottom:16%;left:0;right:0;font-size:22px;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.who{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.94);padding:6px 14px 6px 7px;border-radius:99px;box-shadow:0 4px 12px rgba(0,0,0,.18);font-size:20px}
+.who img{height:30px;border-radius:6px;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.capt{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;font-size:13.5px;font-weight:500;padding:4px 10px;border-radius:10px}
+.qbox{background:#fff8dc;border:2.5px solid #ffe08a;border-radius:22px;padding:14px 16px;text-align:center}
+.qbox h2{margin:0;font-size:clamp(24px,3.2vw,34px)}
+.qbox h2 b{color:var(--pri);text-decoration:underline wavy var(--pink);text-underline-offset:6px}
+.hintbtn{margin-top:8px;font-size:15px;color:#9a6a00;background:#ffeeb0;padding:6px 14px;border-radius:99px}
+.hinttxt{margin:8px 0 0;font-size:15.5px;color:#6b5a1c;font-weight:500;line-height:1.5}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.op{display:flex;align-items:center;gap:10px;justify-content:center;border-radius:20px;padding:clamp(13px,2.2vh,20px) 10px;color:#fff;font-size:clamp(19px,2.3vw,25px);font-weight:900;
+  box-shadow:0 6px 0 rgba(0,0,0,.2);transition:transform .07s,box-shadow .07s,opacity .2s}
+.op:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.op i{font-style:normal;width:30px;height:30px;flex:none;border-radius:50%;background:rgba(255,255,255,.28);display:grid;place-items:center;font-size:15px}
+.o0{background:#0ea5e9}.o1{background:#8b5cf6}.o2{background:#14b8a6}.o3{background:#f97316}
+.op.dim{opacity:.35}
+.op.right{background:var(--ok);outline:5px solid #a7f3d0;animation:pop .3s}
+.op.wrong{background:var(--bad);animation:shake .4s}
+@keyframes pop{50%{transform:scale(1.06)}}
+.fb{margin-top:12px;border-radius:18px;padding:12px 14px;text-align:center;font-size:18px;line-height:1.5}
+.fb.ok{background:#e3fbf1;color:#087f5b;border:2px solid #8ce5c1}
+.fb.no{background:#ffe9ee;color:#b0123a;border:2px solid #ffb0c2}
+.fb small{display:block;font-weight:500;font-size:14.5px;color:var(--sub);margin-top:2px}
+.fb .btn{margin-top:9px}
+
+/* ---------- 결과 ---------- */
+#result{text-align:center}
+.rgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start;text-align:center}
+@media (max-width:820px){.rgrid{grid-template-columns:1fr}}
+.remo{font-size:clamp(56px,9vh,84px);line-height:1;animation:float 3s ease-in-out infinite;display:inline-block}
+#rTitle{margin:4px 0 12px;font-size:clamp(28px,4vw,40px);color:var(--pri)}
+.rankcard{border-radius:26px;padding:4px;background:linear-gradient(135deg,var(--pri),var(--pri2),var(--pink))}
+.rankcard>div{background:#fff;border-radius:22px;padding:16px}
+.rankcard p{margin:0;color:var(--sub);font-weight:500}
+.rankbig{font-size:clamp(34px,5vw,50px);background:linear-gradient(90deg,var(--pri),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.2}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.stats div{background:#f6f7fd;border-radius:16px;padding:10px 4px;font-size:13px;color:var(--sub);font-weight:500}
+.stats b{display:block;font-size:22px;color:var(--ink);font-weight:900}
+.panel{background:#f6f7fd;border-radius:22px;padding:14px;text-align:left}
+.panel h3{margin:0 0 8px;font-size:18px;text-align:center}
+.note{display:grid;gap:6px;max-height:300px;overflow-y:auto}
+.nrow{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center;background:#fff;border-radius:14px;padding:8px 10px;font-size:15.5px}
+.nrow img{width:38px;border-radius:5px;box-shadow:0 0 0 1px rgba(0,0,0,.1)}
+.nrow b{color:var(--pri)}.nrow small{display:block;color:var(--sub);font-weight:500;font-size:12.5px}
+.rl{display:grid;gap:6px}
+.rr{display:grid;grid-template-columns:2.2em 1fr auto auto;gap:8px;align-items:center;background:#fff;border-radius:13px;padding:8px 12px;font-size:15.5px}
+.rr.me{background:#fff4cf;outline:2.5px solid var(--gold)}
+.rr i{font-style:normal;text-align:center;color:var(--pri);font-weight:900}
+.rr span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rr u{text-decoration:none;font-size:12.5px;color:var(--sub);font-weight:500}
+.rr em{font-style:normal;font-weight:900}
+.rr button{background:#ffe1e8;color:#b0123a;border-radius:8px;padding:2px 9px;font-size:13px}
+.empty{color:var(--sub);padding:16px;text-align:center;font-weight:500}
+.status{font-size:12.5px;color:var(--sub);font-weight:500;margin-top:8px;text-align:center}
+
+/* ---------- 모달 ---------- */
+.modal{position:fixed;inset:0;z-index:40;background:rgba(28,35,64,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px}
+.box{width:min(520px,100%);max-height:94vh;overflow-y:auto;background:#fff;border-radius:28px;padding:22px;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.3)}
+.box h3{margin:0 0 4px;font-size:28px;color:var(--pri)}
+.box p{margin:0 0 12px;color:var(--sub);font-weight:500}
+.tabs{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+.tabs button{padding:7px 16px;border-radius:99px;background:#eef0fb;font-size:15px}
+.tabs button.on{background:var(--pri);color:#fff}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<main class="shell">
+
+  <!-- ==================== 시작 화면 ==================== -->
+  <section id="start">
+    <span class="chip">🌍 신나는 세계 여행 퀴즈!</span>
+    <div class="globe">🗺️</div>
+    <h1 class="jua">나라 수도 맞추기</h1>
+    <p class="lead">세계 여러 나라의 사진과 국기를 보고 <b>알맞은 수도</b>를 맞혀 보세요!<br>힌트 없이 맞히면 100점, 힌트를 보고 맞히면 50점이에요.</p>
+    <input id="nameIn" class="name" maxlength="8" placeholder="이름(별명)을 적어 주세요" autocomplete="off">
+    <div class="pick">
+      <h2>🎯 도전할 문제 수를 골라 주세요!</h2>
+      <div class="rounds">
+        <button class="round r10" onclick="begin(10)">🌱 10문제<small>가볍게 도전!</small></button>
+        <button class="round r20" onclick="begin(20)">🔥 20문제<small>실력 뽐내기!</small></button>
+        <button class="round r50" onclick="begin(50)">👑 50문제<small>세계 박사 도전!</small></button>
+      </div>
+    </div>
+    <div class="rowc">
+      <button class="btn sm" onclick="openRank()">🏆 오늘의 랭킹</button>
+      <button class="btn sm" id="sndBtn" onclick="toggleSound()">🔊 효과음 켜짐</button>
+    </div>
+  </section>
+
+  <!-- ==================== 퀴즈 화면 ==================== -->
+  <section id="quiz" class="hidden">
+    <div class="bar">
+      <div class="l"><span class="tag">문제 <span id="qNum">1</span> / <span id="qTot">10</span></span><span class="tag w" id="cont"></span><span class="tag fire hidden" id="streak"></span></div>
+      <div class="r"><span class="stat">⭐ <span id="score">0</span>점</span><span class="stat t">⏱ <span id="clock">0:00</span></span><button class="btn sm" onclick="$('quitM').classList.remove('hidden')">그만하기</button></div>
+    </div>
+    <div class="prog"><i id="prog"></i></div>
+    <div class="stage">
+      <div class="photo">
+        <img class="pic" id="pic" alt="">
+        <div class="art hidden" id="art"></div>
+        <div class="who"><img id="flag" alt=""><span id="flagEmo" class="hidden"></span><span id="cName"></span></div>
+        <div class="capt" id="capt"></div>
+      </div>
+      <div>
+        <div class="qbox">
+          <h2 class="jua" id="qText"></h2>
+          <button class="hintbtn" id="hintBtn" onclick="showHint()">💡 힌트 보기 (맞히면 50점)</button>
+          <p class="hinttxt hidden" id="hintTxt"></p>
+        </div>
+        <div class="opts" id="opts"></div>
+        <div class="fb hidden" id="fb"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 결과 화면 ==================== -->
+  <section id="result" class="hidden">
+    <div class="rgrid">
+      <div>
+        <div class="remo" id="rEmo">🏆</div>
+        <h2 class="jua" id="rTitle"></h2>
+        <div class="rankcard"><div>
+          <p id="rankLabel">오늘 부스 도전자 중 나의 순위는?</p>
+          <div class="rankbig jua" id="rankBig">-</div>
+          <p id="rDesc"></p>
+        </div></div>
+        <div class="stats">
+          <div><b id="sScore">0</b>점수</div><div><b id="sCorrect">0</b>맞힌 개수</div><div><b id="sAcc">0%</b>정답률</div><div><b id="sTime">0:00</b>걸린 시간</div>
+        </div>
+        <div class="rowc">
+          <button class="btn pri" id="retryBtn" onclick="retryWrong()">✏️ 틀린 문제만 다시</button>
+          <button class="btn gold" onclick="goHome()">🏠 처음 화면으로</button>
+        </div>
+      </div>
+      <div style="display:grid;gap:14px">
+        <div class="panel" id="rankPanel"><h3>🏆 오늘의 랭킹</h3><div class="rl" id="resRank"></div><div class="status" id="resStatus"></div></div>
+        <div class="panel" id="notePanel"><h3>📒 다시 보는 수도 (틀린 문제)</h3><div class="note" id="note"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="quitM" class="modal hidden"><div class="box" style="width:min(380px,100%)">
+  <div style="font-size:50px">🤔</div><h3>정말 그만할까요?</h3><p>지금 나가면 풀고 있던 점수가 사라져요!</p>
+  <div class="rowc"><button class="btn" onclick="$('quitM').classList.add('hidden')">계속 풀기</button><button class="btn pri" onclick="goHome()">나가기</button></div>
+</div></div>
+
+<div id="rankM" class="modal hidden"><div class="box">
+  <h3 class="jua">🏆 오늘의 랭킹</h3><p>점수가 높은 순서, 점수가 같으면 빨리 푼 순서예요</p>
+  <div class="tabs" id="rankTabs"></div>
+  <div class="panel"><div class="rl" id="rankList"></div></div>
+  <div class="status" id="rankStatus"></div>
+  <div class="rowc" style="margin-top:12px"><button class="btn sm" id="mgBtn" onclick="toggleManage()">🔧 선생님 관리</button><button class="btn sm hidden" id="clrBtn" onclick="clearRank()">이 랭킹 모두 지우기</button><button class="btn sm pri" onclick="$('rankM').classList.add('hidden')">닫기</button></div>
+</div></div>
+
+<script src="board.js"></script>
+<script>
+// =====================================================
+// 나라 수도 맞추기 (업그레이드판)
+// 학생 원작: 50개 나라의 사진·국기·힌트를 보고 4개 보기 중 수도 고르기, 10/20/50문제, 결과에서 내 순위 보기
+// 업그레이드: 지어낸 "상위 몇 %" 대신 오늘 부스의 진짜 랭킹, 힌트를 골라 쓰는 점수제,
+//            틀린 문제 다시 보기·다시 풀기, 어느 컴퓨터에서나 보이는 국기 그림, 엉뚱한 사진 바로잡기
+// =====================================================
+const $ = id=>document.getElementById(id);
+const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = a=>{ a = [...a]; for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
+const fmt = ms=>{ const s = Math.floor(ms/1000); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+
+// [나라, 수도, 국가코드, 국기, 대륙, 사진 설명, 힌트, 오답 3개, 사진 번호(없으면 그림으로), 색]
+// 사진 설명은 실제 사진에 보이는 것만 적었어요. 다른 도시가 찍힌 사진은 빼고 그림으로 바꿨어요.
+const D = [
+["대한민국","서울","kr","🇰🇷","아시아","한글 간판이 가득한 밤거리","한강이 흐르고 멋진 궁궐이 있는 우리나라의 중심 도시예요!",["부산","인천","경주"],"1538485399081-7191377e8241","#3b82f6"],
+["일본","도쿄","jp","🇯🇵","아시아","일본의 번화가","우리나라 바로 옆에 있는 섬나라의 가장 큰 도시예요.",["오사카","교토","삿포로"],"1540959733332-eab4deabeeaf","#ef4444"],
+["중국","베이징","cn","🇨🇳","아시아","만리장성","만리장성과 판다로 유명한 나라의 수도예요.",["상하이","홍콩","칭다오"],"1508804185872-d7badad00f7d","#dc2626"],
+["미국","워싱턴 D.C.","us","🇺🇸","북아메리카","국회의사당","뉴욕이나 LA가 아니라 대통령이 사는 백악관이 있는 곳이에요!",["뉴욕","로스앤젤레스","시카고"],"1501466044931-62695aada8e9","#2563eb"],
+["영국","런던","gb","🇬🇧","유럽","타워 브리지와 템스강","빨간 2층 버스와 시계탑 '빅벤'이 유명한 도시예요.",["맨체스터","리버풀","옥스퍼드"],"1513635269975-59663e0ac1ad","#1d4ed8"],
+["프랑스","파리","fr","🇫🇷","유럽","에펠탑","높고 멋진 철탑 '에펠탑'이 서 있는 예술의 도시예요.",["마르세유","리옹","니스"],"1502602898657-3e91760cbb34","#4f46e5"],
+["이탈리아","로마","it","🇮🇹","유럽","콜로세움","피자와 파스타의 나라! 고대 원형 경기장 콜로세움이 있어요.",["밀라노","베네치아","피렌체"],"1552832230-c0197dd311b5","#16a34a"],
+["독일","베를린","de","🇩🇪","유럽","브란덴부르크 문","소시지와 자동차가 유명하며, 옛날에 장벽이 있었던 도시예요.",["뮌헨","프랑크푸르트","함부르크"],"1560969184-10fe8719e047","#ca8a04"],
+["호주","캔버라","au","🇦🇺","오세아니아","국회의사당이 있는 도시","시드니가 아니라 시드니와 멜버른 사이에 계획해서 만든 수도예요!",["시드니","멜버른","브리즈번"],null,"#0284c7"],
+["캐나다","오타와","ca","🇨🇦","북아메리카","로키산맥의 호수","단풍잎 국기의 나라! 토론토나 밴쿠버가 아니라 이곳이 수도예요.",["토론토","밴쿠버","몬트리올"],"1503614472-8c93d56e92ce","#e11d48"],
+["스페인","마드리드","es","🇪🇸","유럽","스페인의 도시 풍경","정열의 나라! 바르셀로나와 함께 축구가 아주 유명한 도시예요.",["바르셀로나","세비야","발렌시아"],"1539037116277-4db20889f2d4","#ea580c"],
+["브라질","브라질리아","br","🇧🇷","남아메리카","비행기 모양의 계획도시","삼바 축제와 축구의 나라! 비행기 모양으로 계획된 수도예요.",["리우데자네이루","상파울루","살바도르"],null,"#15803d"],
+["이집트","카이로","eg","🇪🇬","아프리카","피라미드","나일강 옆에 있으며 거대한 피라미드와 스핑크스가 가까워요.",["알렉산드리아","룩소르","기자"],"1539650116574-8efeb43e2750","#d97706"],
+["태국","방콕","th","🇹🇭","아시아","태국의 밤거리","코끼리와 맛있는 팟타이가 유명한 동남아시아 여행지예요.",["푸껫","치앙마이","파타야"],"1508009603885-50cf7c579365","#7c3aed"],
+["베트남","하노이","vn","🇻🇳","아시아","기찻길 옆 마을","쌀국수와 반미가 맛있는 나라의 북쪽에 있는 수도예요.",["호찌민","다낭","나트랑"],"1555921015-5532091f6026","#dc2626"],
+["인도","뉴델리","in","🇮🇳","아시아","인디아 게이트","카레와 타지마할로 유명한 아주 큰 나라의 수도예요.",["뭄바이","콜카타","벵갈루루"],"1587474260584-136574528ed5","#f97316"],
+["러시아","모스크바","ru","🇷🇺","유럽·아시아","성 바실리 대성당","세계에서 땅이 가장 넓은 나라! 알록달록 양파 모양 지붕 성당이 있어요.",["상트페테르부르크","블라디보스토크","소치"],"1513326738677-b964603b136d","#2563eb"],
+["스위스","베른","ch","🇨🇭","유럽","알프스의 마을","알프스 산맥과 시계, 초콜릿으로 유명한 나라! 곰의 도시라는 뜻이에요.",["취리히","제네바","루체른"],"1530122037265-a5f1f91d3b99","#ef4444"],
+["네덜란드","암스테르담","nl","🇳🇱","유럽","운하가 흐르는 도시","튤립과 풍차, 자전거가 가득한 물의 도시예요.",["로테르담","헤이그","위트레흐트"],"1512470876302-972faa2aa9a4","#f97316"],
+["그리스","아테네","gr","🇬🇷","유럽","파르테논 신전","그리스 로마 신화와 올림픽이 시작된 역사가 깊은 도시예요.",["산토리니","테살로니키","스파르타"],"1555993539-1732b0258235","#0284c7"],
+["튀르키예","앙카라","tr","🇹🇷","아시아·유럽","나라 한가운데의 수도","형제의 나라! 이스탄불이 가장 크지만 수도는 나라 한가운데 있어요.",["이스탄불","안탈리아","이즈미르"],null,"#dc2626"],
+["멕시코","멕시코시티","mx","🇲🇽","북아메리카","예술 궁전","타코와 나초가 유명한 나라! 나라 이름 뒤에 '시티'가 붙어요.",["칸쿤","과달라하라","몬테레이"],"1518659526054-190340b32735","#16a34a"],
+["아르헨티나","부에노스아이레스","ar","🇦🇷","남아메리카","오벨리스크 광장","축구 선수 메시의 나라! '좋은 바람'이라는 뜻의 멋진 이름이에요.",["코르도바","로사리오","멘도사"],"1589909202802-8f4aadce1849","#38bdf8"],
+["페루","리마","pe","🇵🇪","남아메리카","마추픽추","하늘 위의 도시 마추픽추와 귀여운 알파카가 사는 나라의 수도예요.",["쿠스코","아레키파","트루히요"],"1526392060635-9d6019884377","#ef4444"],
+["뉴질랜드","웰링턴","nz","🇳🇿","오세아니아","바람이 많이 부는 항구 도시","양떼와 키위새의 나라! 오클랜드보다 남쪽에 있는 바람의 도시예요.",["오클랜드","크라이스트처치","퀸스타운"],null,"#0f172a"],
+["인도네시아","자카르타","id","🇮🇩","아시아","인도네시아의 도시 풍경","수만 개의 섬으로 이루어진 나라의 가장 큰 도시예요.",["발리","수라바야","반둥"],"1555899434-94d1368aa7af","#dc2626"],
+["필리핀","마닐라","ph","🇵🇭","아시아","필리핀의 섬과 바다","아름다운 바다가 많은 섬나라! 세부나 보라카이보다 큰 수도예요.",["세부","다바오","보라카이"],"1518509562904-e7ef99cdcc86","#2563eb"],
+["말레이시아","쿠알라룸푸르","my","🇲🇾","아시아","페트로나스 트윈 타워","하늘을 찌를 듯 높은 쌍둥이 빌딩이 있는 동남아시아 도시예요.",["코타키나발루","페낭","조호르바루"],"1596422846543-75c6fc197f07","#eab308"],
+["싱가포르","싱가포르","sg","🇸🇬","아시아","마리나 베이","나라 이름과 수도 이름이 똑같은 아주 깨끗하고 멋진 도시국가예요!",["쿠알라룸푸르","방콕","마닐라"],"1525625293386-3f8f99389edd","#ef4444"],
+["몽골","울란바토르","mn","🇲🇳","아시아","푸른 초원과 게르","푸른 초원과 게르, 말 타기로 유명한 나라의 수도예요.",["다르항","에르데네트","카라코룸"],null,"#0284c7"],
+["사우디아라비아","리야드","sa","🇸🇦","아시아","사막 한가운데의 도시","넓은 사막과 석유가 풍부한 중동 나라의 한가운데 있는 수도예요.",["메카","제다","두바이"],null,"#15803d"],
+["아랍에미리트","아부다비","ae","🇦🇪","아시아","그랜드 모스크가 있는 도시","세계에서 가장 높은 빌딩이 있는 두바이 바로 옆, 진짜 수도예요!",["두바이","샤르자","도하"],null,"#059669"],
+["스웨덴","스톡홀름","se","🇸🇪","유럽","물가의 옛 시가지","노벨상 시상식이 열리고 이케아 가구가 태어난 북유럽의 수도예요.",["예테보리","말뫼","웁살라"],"1509356843151-3e7d96241e11","#2563eb"],
+["노르웨이","오슬로","no","🇳🇴","유럽","피오르와 오로라의 나라","멋진 피오르 해안과 오로라, 노벨 평화상 시상식으로 유명한 도시예요.",["베르겐","트론헤임","스타방에르"],null,"#dc2626"],
+["핀란드","헬싱키","fi","🇫🇮","유럽","헬싱키 대성당","산타클로스 마을과 사우나, 자일리톨이 유명한 북유럽의 수도예요.",["로바니에미","탐페레","투르쿠"],"1538332576228-eb5b4c4de6f5","#0284c7"],
+["덴마크","코펜하겐","dk","🇩🇰","유럽","알록달록한 항구","동화 작가 안데르센과 레고 블록의 나라! 인어공주 동상이 있어요.",["오르후스","오덴세","올보르"],"1513622470522-26c3c8a854bc","#e11d48"],
+["오스트리아","빈","at","🇦🇹","유럽","음악의 도시","모차르트와 베토벤이 활동한 아름다운 '음악의 도시'예요.",["잘츠부르크","인스브루크","그라츠"],null,"#dc2626"],
+["체코","프라하","cz","🇨🇿","유럽","빨간 지붕의 옛 시가지","동화 속 마을처럼 예쁜 빨간 지붕과 시계탑이 있는 도시예요.",["브르노","오스트라바","플젠"],"1541849546-216549ae216d","#2563eb"],
+["헝가리","부다페스트","hu","🇭🇺","유럽","도나우강이 흐르는 도시","도나우강을 사이에 두고 '부다'와 '페스트'가 합쳐진 야경이 멋진 도시예요.",["데브레첸","세게드","미슈콜츠"],"1551867633-194f125bddfa","#16a34a"],
+["폴란드","바르샤바","pl","🇵🇱","유럽","문화과학궁전","피아노의 시인 쇼팽이 태어난 나라의 수도예요.",["크라쿠프","그단스크","브로츠와프"],"1519197924294-4ba991a11128","#dc2626"],
+["벨기에","브뤼셀","be","🇧🇪","유럽","개선문이 있는 공원","달콤한 와플과 초콜릿, 귀여운 오줌싸개 동상이 있는 도시예요.",["브뤼헤","안트베르펜","헨트"],"1559113202-c916b8e44373","#ca8a04"],
+["포르투갈","리스본","pt","🇵🇹","유럽","노란 전차가 달리는 언덕 도시","에그타르트와 노란색 전차(트램)가 언덕을 달리는 항구 도시예요.",["포르투","코임브라","파루"],null,"#15803d"],
+["아일랜드","더블린","ie","🇮🇪","유럽","초록빛 섬나라의 수도","초록빛 자연과 세잎클로버가 상징인 섬나라의 수도예요.",["코크","골웨이","벨파스트"],null,"#16a34a"],
+["남아프리카 공화국","프리토리아","za","🇿🇦","아프리카","보라색 자카란다 꽃의 도시","아프리카 맨 남쪽 나라! 행정 수도인 이곳에는 보라색 자카란다 꽃이 피어요.",["케이프타운","요하네스버그","더반"],null,"#15803d"],
+["케냐","나이로비","ke","🇰🇪","아프리카","사바나 초원","사자, 기린, 얼룩말이 뛰어노는 사파리 여행으로 유명한 나라의 수도예요.",["몸바사","키수무","나쿠루"],"1516426122078-c23e76319801","#dc2626"],
+["모로코","라바트","ma","🇲🇦","아프리카","전통 무늬의 분수","사하라 사막과 알록달록한 전통 시장이 있는 북아프리카 나라의 수도예요.",["카사블랑카","마라케시","페스"],"1539020140153-e479b8c22e70","#ef4444"],
+["칠레","산티아고","cl","🇨🇱","남아메리카","안데스산맥 아래의 도시","지도에서 아래로 아주 길쭉하게 생긴 나라의 한가운데 수도예요.",["발파라이소","푼타아레나스","이키케"],null,"#2563eb"],
+["콜롬비아","보고타","co","🇨🇴","남아메리카","산으로 둘러싸인 도시","향긋한 커피가 유명한 남아메리카 나라의 높은 산속 수도예요.",["메데인","카르타헤나","칼리"],"1568632234157-ce7aecd03d0d","#eab308"],
+["우크라이나","키이우","ua","🇺🇦","유럽","황금빛 지붕의 성당","넓은 해바라기 밭과 황금빛 돔 지붕 성당이 있는 동유럽의 수도예요.",["오데사","르비우","하르키우"],"1561542320-9a18cd340469","#0284c7"],
+["카타르","도하","qa","🇶🇦","아시아","바닷가의 높은 빌딩 도시","2022년 월드컵이 열렸던 중동의 부자 나라 수도예요.",["두바이","아부다비","리야드"],null,"#881337"]
+].map(a=>({country:a[0],capital:a[1],code:a[2],emo:a[3],cont:a[4],capt:a[5],hint:a[6],wrongs:a[7],img:a[8] ? `https://images.unsplash.com/photo-${a[8]}?auto=format&fit=crop&w=900&q=75` : null,color:a[9]}));
+const flagUrl = (c,w=160)=>`https://flagcdn.com/w${w}/${c}.png`;
+
+// ---------- 효과음 (WebAudio) ----------
+let sound = true, AC = null;
+function tone(f,d=.12,when=0,type='triangle',v=.12){
+  if(!sound) return;
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)(); if(AC.state!=='running') AC.resume();
+    const t = AC.currentTime+when, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t+d+.02);
+  }catch(e){}
+}
+const snd = {
+  click(){ tone(523,.07); }, ok(){ tone(523,.1); tone(659,.1,.1); tone(784,.18,.2); },
+  no(){ tone(165,.2,0,'sawtooth',.08); tone(155,.3,.12,'sawtooth',.08); },
+  fan(){ [[262,330,392],[349,440,523],[392,494,587],[523,659,784,1047]].forEach((c,i)=>c.forEach(f=>tone(f,i===3?.7:.16,i*.15))); }
+};
+function toggleSound(){ sound = !sound; $('sndBtn').textContent = sound ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐'; snd.click(); }
+
+// ---------- 꽃가루 ----------
+const fx = $('fx'), fc = fx.getContext('2d'); let bits = [];
+function confetti(n){
+  fx.width = innerWidth; fx.height = innerHeight;
+  for(let i=0;i<n;i++) bits.push({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*.6,vx:(Math.random()-.5)*14,vy:-8-Math.random()*10,r:4+Math.random()*5,c:['#4f5bd5','#ff5d8f','#ffb81f','#12b886','#0ea5e9'][i%5],a:Math.random()*6,l:1});
+  if(bits.length===n) requestAnimationFrame(fxLoop);
+}
+function fxLoop(){
+  fc.clearRect(0,0,fx.width,fx.height);
+  bits.forEach(b=>{ b.x += b.vx; b.y += b.vy; b.vy += .45; b.a += .2; b.l -= .012; fc.save(); fc.globalAlpha = Math.max(0,b.l); fc.translate(b.x,b.y); fc.rotate(b.a); fc.fillStyle = b.c; fc.fillRect(-b.r,-b.r/2,b.r*2,b.r); fc.restore(); });
+  bits = bits.filter(b=>b.l>0 && b.y<fx.height+20);
+  if(bits.length) requestAnimationFrame(fxLoop); else fc.clearRect(0,0,fx.width,fx.height);
+}
+
+// ---------- 게임 상태 ----------
+const G = {qs:[],n:10,i:0,score:0,correct:0,streak:0,best:0,t0:0,busy:false,hint:false,wrong:[],practice:false,name:'',myId:null,timer:null,tick:null};
+function show(id){ ['start','quiz','result'].forEach(s=>$(s).classList.toggle('hidden',s!==id)); }
+
+function begin(n){
+  const el = $('nameIn'), name = el.value.trim();
+  if(!name){ el.classList.remove('need'); void el.offsetWidth; el.classList.add('need'); el.placeholder = '✏️ 이름(별명)을 먼저 적어 주세요!'; el.focus(); return; }
+  G.name = name; G.practice = false;
+  start(shuffle(D).slice(0,n));
+}
+function start(qs){
+  snd.click();
+  Object.assign(G,{qs,n:qs.length,i:0,score:0,correct:0,streak:0,best:0,t0:Date.now(),busy:false,wrong:[],myId:null});
+  qs.forEach(q=>{ if(q.img) new Image().src = q.img; new Image().src = flagUrl(q.code); });   // 미리 받아 두어 사진이 바로 나오게
+  $('qTot').textContent = G.n; $('score').textContent = 0;
+  show('quiz'); render();
+  clearInterval(G.tick); G.tick = setInterval(()=>{ $('clock').textContent = fmt(Date.now()-G.t0); },500); $('clock').textContent = '0:00';
+}
+function artHtml(q){ return `<div><img class="big" src="${flagUrl(q.code,320)}" alt="" onerror="this.outerHTML='<div class=emo>${q.emo}</div>'"><span class="jua">${esc(q.capt)}</span></div>`; }
+function render(){
+  const q = G.qs[G.i]; G.busy = false; G.hint = false; clearTimeout(G.timer);
+  $('qNum').textContent = G.i+1; $('cont').textContent = '🌏 '+q.cont;
+  $('prog').style.width = (G.i/G.n*100)+'%';
+  const pic = $('pic'), art = $('art');
+  const useArt = ()=>{ pic.classList.add('hidden'); art.classList.remove('hidden'); art.style.background = `linear-gradient(160deg,${q.color},#ffd98a)`; art.innerHTML = artHtml(q); $('capt').classList.add('hidden'); };
+  if(q.img){ pic.classList.remove('hidden'); art.classList.add('hidden'); $('capt').classList.remove('hidden'); $('capt').textContent = '📍 '+q.capt; pic.onerror = useArt; pic.src = q.img; }
+  else useArt();
+  const fl = $('flag'), fe = $('flagEmo');
+  fl.classList.remove('hidden'); fe.classList.add('hidden'); fe.textContent = q.emo;
+  fl.onerror = ()=>{ fl.classList.add('hidden'); fe.classList.remove('hidden'); }; fl.src = flagUrl(q.code);
+  $('cName').textContent = q.country;
+  $('qText').innerHTML = `<b>${esc(q.country)}</b>의 수도를 맞혀라!`;
+  $('hintBtn').classList.remove('hidden'); $('hintTxt').classList.add('hidden'); $('hintTxt').textContent = '💡 '+q.hint;
+  $('fb').classList.add('hidden');
+  $('opts').innerHTML = shuffle([q.capital,...q.wrongs]).map((o,k)=>`<button class="op o${k}" data-v="${esc(o)}"><i>${k+1}</i><span>${esc(o)}</span></button>`).join('');
+}
+function showHint(){ if(G.busy) return; G.hint = true; snd.click(); $('hintBtn').classList.add('hidden'); $('hintTxt').classList.remove('hidden'); }
+$('opts').addEventListener('click',e=>{ const b = e.target.closest('.op'); if(b) answer(b); });
+addEventListener('keydown',e=>{
+  if($('quiz').classList.contains('hidden') || !$('quitM').classList.contains('hidden')) return;
+  if(G.busy){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); next(); } return; }
+  const k = '1234'.indexOf(e.key); if(k>=0){ const b = $('opts').children[k]; if(b) answer(b); }
+});
+function answer(btn){
+  if(G.busy) return; G.busy = true;
+  const q = G.qs[G.i], ok = btn.dataset.v===q.capital, fb = $('fb');
+  [...$('opts').children].forEach(b=>{ if(b.dataset.v===q.capital) b.classList.add('right'); else if(b===btn) b.classList.add('wrong'); else b.classList.add('dim'); });
+  $('hintBtn').classList.add('hidden');
+  const last = G.i===G.n-1, nextBtn = `<br><button class="btn sm pri" onclick="next()">${last?'결과 보기':'다음 문제'} ▶</button>`;
+  if(ok){
+    const pt = G.hint ? 50 : 100; G.score += pt; G.correct++; G.streak++; G.best = Math.max(G.best,G.streak);
+    snd.ok(); confetti(30);
+    fb.className = 'fb ok'; fb.innerHTML = `⭕ 정답이에요! +${pt}점<small>${esc(q.country)}의 수도는 ${esc(q.capital)}</small>`;
+    G.timer = setTimeout(next,1300);
+  }else{
+    G.streak = 0; G.wrong.push(q); snd.no();
+    fb.className = 'fb no'; fb.innerHTML = `❌ 아쉬워요! <b>${esc(q.country)}</b>의 수도는 <b>${esc(q.capital)}</b>예요<small>💡 ${esc(q.hint)}</small>${nextBtn}`;
+    G.timer = setTimeout(next,6000);
+  }
+  $('score').textContent = G.score;
+  const st = $('streak'); st.classList.toggle('hidden',G.streak<2); st.textContent = `🔥 ${G.streak}연속 정답`;
+}
+function next(){
+  if(!G.busy) return; clearTimeout(G.timer);
+  G.i++; if(G.i<G.n) render(); else finish();
+}
+
+// ---------- 결과 ----------
+function finish(){
+  clearInterval(G.tick); G.busy = false;
+  const t = Date.now()-G.t0, acc = Math.round(G.correct/G.n*100);
+  snd.fan(); $('prog').style.width = '100%';
+  // 등급 이름 (학생 원작 그대로)
+  const g = acc===100 ? ['👑','전설의 세계 지리 마스터!','단 한 문제도 틀리지 않았어요! 세계 어디든 여행할 수 있겠네요!']
+    : acc>=90 ? ['🏆','최고의 세계 탐험가!','정말 대단한 실력이에요! 친구들에게 자랑해도 좋아요!']
+    : acc>=80 ? ['🥇','똑똑한 지구본 박사!','대부분의 나라 수도를 정확하게 알고 있네요! 멋져요!']
+    : acc>=60 ? ['🥈','씩씩한 세계 여행자!','절반 이상을 훌쩍 넘겼어요! 조금만 더 연습하면 금방 박사가 될 거예요!']
+    : acc>=40 ? ['🧭','호기심 가득한 새싹 탐험가!','오늘 새로운 나라의 수도를 많이 배웠죠? 다시 도전해 봐요!']
+    : ['🌱','세계 여행 출발 준비 완료!','괜찮아요! 힌트를 잘 읽으면서 한 번 더 도전하면 점수가 쑥쑥 오를 거예요!'];
+  $('rEmo').textContent = g[0]; $('rTitle').textContent = g[1]; $('rDesc').textContent = g[2];
+  $('sScore').textContent = G.score; $('sCorrect').textContent = `${G.correct}/${G.n}`; $('sAcc').textContent = acc+'%'; $('sTime').textContent = fmt(t);
+  $('note').innerHTML = G.wrong.length ? G.wrong.map(q=>`<div class="nrow"><img src="${flagUrl(q.code,80)}" alt="" onerror="this.style.visibility='hidden'"><div>${esc(q.country)} → <b>${esc(q.capital)}</b><small>${esc(q.hint)}</small></div></div>`).join('')
+    : '<div class="empty">틀린 문제가 하나도 없어요! 🎉</div>';
+  $('retryBtn').classList.toggle('hidden',!G.wrong.length);
+  $('rankPanel').classList.toggle('hidden',G.practice);
+  if(G.practice){ $('rankLabel').textContent = '틀린 문제 다시 풀기 (연습)'; $('rankBig').textContent = `${G.correct} / ${G.n}`; }
+  else{
+    G.myId = Board.submit({name:G.name,s:G.score,c:G.correct,n:G.n,t:Math.max(3000,t)});
+    renderResRank();
+  }
+  show('result'); if(acc>=70) confetti(110);
+}
+function retryWrong(){ G.practice = true; start(shuffle(G.wrong)); }
+function goHome(){ snd.click(); clearInterval(G.tick); clearTimeout(G.timer); $('quitM').classList.add('hidden'); $('nameIn').value = ''; G.name = ''; G.myId = null; show('start'); }
+
+// ---------- 오늘의 랭킹 (부스 공용) ----------
+const Board = typeof createBoard==='function' ? createBoard('capital') : {online:false,user:null,today:()=>[],submit:()=>null,isMine:()=>false,onChange(){},init(){},login(){},remove(){},clearToday(){}};
+let rankN = 10, manage = false;
+const ranked = n=>Board.today().filter(r=>r.n===n).sort((a,b)=>b.s-a.s || a.t-b.t || a.at-b.at);
+const rowHtml = (r,i,me,del)=>`<div class="rr ${me?'me':''}"><i>${i<3?['🥇','🥈','🥉'][i]:i+1}</i><span>${esc(r.name)}</span><u>${r.c}/${r.n} · ${fmt(r.t)}</u><em>${r.s}점</em>${del?`<button onclick="delRank(${i})">✕</button>`:''}</div>`;
+const statusText = ()=>Board.online ? '🟢 오늘 부스에서 도전한 모든 친구의 기록이에요' : '🟡 인터넷에 연결되지 않아 이 기기에서 한 기록만 보여요';
+function renderResRank(){
+  if(!G.myId || G.practice || $('result').classList.contains('hidden') && !G.myId) return;
+  const rows = ranked(G.n), me = rows.findIndex(r=>Board.isMine(r,[G.myId]));
+  if(me>=0){
+    // 지어낸 숫자가 아니라, 오늘 같은 문제 수에 도전한 친구들 가운데 진짜 내 자리예요
+    $('rankLabel').textContent = `오늘 ${G.n}문제에 도전한 ${rows.length}명 중`;
+    $('rankBig').textContent = rows.length===1 ? '첫 번째 도전자!' : `${me+1}등 · 상위 ${Math.max(1,Math.round((me+1)/rows.length*100))}%`;
+  }
+  $('resRank').innerHTML = rows.slice(0,5).map((r,i)=>rowHtml(r,i,i===me)).join('')+(me>=5?rowHtml(rows[me],me,true):'') || '<div class="empty">아직 기록이 없어요</div>';
+  $('resStatus').textContent = statusText();
+}
+function renderRank(){
+  $('rankTabs').innerHTML = [10,20,50].map(n=>`<button class="${n===rankN?'on':''}" onclick="rankN=${n};renderRank()">${n}문제</button>`).join('');
+  const rows = ranked(rankN), ids = G.myId ? [G.myId] : [];
+  $('rankList').innerHTML = rows.length ? rows.slice(0,30).map((r,i)=>rowHtml(r,i,Board.isMine(r,ids),manage)).join('') : '<div class="empty">아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!</div>';
+  $('rankStatus').textContent = statusText();
+  $('mgBtn').textContent = manage ? '🔧 관리 끝내기' : '🔧 선생님 관리'; $('clrBtn').classList.toggle('hidden',!manage);
+}
+function openRank(){ manage = false; rankN = G.myId ? G.n : rankN; renderRank(); $('rankM').classList.remove('hidden'); }
+async function toggleManage(){
+  if(manage){ manage = false; return renderRank(); }
+  if(Board.online && !Board.user){ try{ await Board.login(); }catch(e){ alert('로그인하지 못했어요. 선생님 계정으로 다시 해 보세요.'); return; } }
+  manage = true; renderRank();
+}
+async function delRank(i){
+  const r = ranked(rankN)[i]; if(!r || !confirm(`${r.name} (${r.s}점) 기록을 지울까요?`)) return;
+  try{ await Board.remove(r); }catch(e){ alert('지우지 못했어요. 선생님 계정인지 확인해 주세요.'); }
+  renderRank();
+}
+async function clearRank(){
+  if(!confirm(`오늘 ${rankN}문제 랭킹을 모두 지울까요? 되돌릴 수 없어요.`)) return;
+  try{ for(const r of ranked(rankN)) await Board.remove(r); }catch(e){ alert('지우지 못했어요. 선생님 계정인지 확인해 주세요.'); }
+  renderRank();
+}
+Board.onChange(()=>{ if(!$('rankM').classList.contains('hidden')) renderRank(); if(!$('result').classList.contains('hidden')) renderResRank(); });
+// 서버 랭킹을 읽을 수 있을 때만 연결해요. 안 되면 이 기기에 보관해 두었다가 다음에 올려요.
+(async ()=>{
+  if(typeof loadFirebase!=='function') return;
+  try{ const f = await loadFirebase(); await f.fs.getDocs(f.fs.query(f.fs.collection(f.db,'capital'),f.fs.limit(1))); await Board.init(); }
+  catch(e){ console.warn('공용 랭킹에 연결하지 못해 이 기기에만 저장해요',e); }
+})();
+$('nameIn').addEventListener('input',e=>e.target.classList.remove('need'));
+</script>
+</body>
+</html>
